@@ -7,7 +7,7 @@ import { InventoryServiceCls } from './inventory-service';
 const router = express.Router();
 
 router.get('/retrieveSKU', async (req: Request, res: Response) => {
-  const id = req.params.id;
+  const id = req.query.id ? Number(req.query.id) : 0;
   const result: IApiResponseBody = {
     data: null,
     error: null,

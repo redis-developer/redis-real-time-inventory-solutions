@@ -1,14 +1,14 @@
 
 interface IProduct {
-    sku: number;
-    name: string;
-    type: string;
-    regularPrice: number;
-    salePrice: number;
-    url: string;
-    image: string;
+    sku?: number;
+    name?: string;
+    type?: string;
+    regularPrice?: number;
+    salePrice?: number;
+    url?: string;
+    image?: string;
 
-    totalQuantity: number;
+    totalQuantity?: number;
 }
 
 

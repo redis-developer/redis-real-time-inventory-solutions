@@ -1,15 +1,40 @@
+import * as ProductRepo from "./models/product-repo";
+import { IProduct } from './models/product-mdl';
+
 class InventoryServiceCls {
-    static retrieveSKU(_id: string): number {
+
+    //TODO : update stream
+
+    static async retrieveSKU(_productId: number): Promise<IProduct> {
         /**  
-        Get amount of SKU.
+        Get current Quantity of a Product.
 
-        :param _id: A SKU
-        :return: Amount
-        :raise ValueError: If SKU is unknown
+        :param _productId: Product Id
+        :return: Product with Quantity
         */
+        const repository = ProductRepo.getRepository();
+        let retItem: IProduct = {};
 
-        return 0;
+        if (repository && _productId) {
+            const product = <IProduct>await repository.fetch(_productId.toString());
+
+            if (product) {
+                retItem = {
+                    sku: product.sku,
+                    name: product.name,
+                    type: product.type,
+                    totalQuantity: product.totalQuantity
+                }
+            }
+            else {
+                throw `Product with Id ${_productId} not found`;
+            }
+        }
+
+        return retItem;
     }
+
+
 }
 
 export {

@@ -1,21 +1,10 @@
-import type { IProduct } from "./product-mdl";
 import {
-    Entity as RedisEntity,
     Schema as RedisSchema
 } from "redis-om";
 
 import { getRedisOmClient } from "../utils/redis-wrapper";
 
-//for typescript
-interface ProductEntity extends IProduct {
-}
-
-//for redis
-class ProductEntity extends RedisEntity {
-}
-
-//for redis
-const schema = new RedisSchema(ProductEntity, {
+const schema = new RedisSchema('Product', {
     sku: { type: "number" },
     name: { type: "string" },
     type: { type: "string" },

@@ -1,8 +1,12 @@
 import dotenv from 'dotenv';
 import fs from 'fs';
+import {
+    Entity as RedisEntity
+} from "redis-om";
 
 import { setRedis, getNodeRedisClient } from '../src/utils/redis-wrapper';
 import * as ProductRepo from "../src/models/product-repo";
+import { IProduct } from '../src/models/product-mdl';
 
 dotenv.config();
 
@@ -42,7 +46,7 @@ const getProductsFromJSONFiles = async () => {
     return products;
 }
 
-const addProductsToRedis = async (_products) => {
+const addProductsToRedis = async (_products: IProduct[]) => {
     const repository = ProductRepo.getRepository();
     const nodeRedisClient = getNodeRedisClient();
 
@@ -50,16 +54,17 @@ const addProductsToRedis = async (_products) => {
 
         const existingKeys = await nodeRedisClient?.keys(`${keyPrefix}:*`);
         if (existingKeys?.length) {
-            console.log(`deleting existing products`);
+            console.log(`deleting existing products and index`);
             await nodeRedisClient?.del(existingKeys);
         }
 
         console.log(`adding products to Redis...`);
         for (let record of _products) {
-            const entity = repository.createEntity(record);
-            entity.totalQuantity = defaultStockQuantity;
+            if (record.sku) {
+                record.totalQuantity = defaultStockQuantity;
+                await repository.save(record.sku.toString(), <RedisEntity>record);
+            }
 
-            await repository.save(entity);
         }
         console.log(`Products added !`);
 
@@ -68,10 +73,10 @@ const addProductsToRedis = async (_products) => {
 
 const init = async () => {
     await setRedis(REDIS_URI);
-    await ProductRepo.createIndex();
 
     const products = await getProductsFromJSONFiles();
     await addProductsToRedis(products);
+    await ProductRepo.createIndex();
 
     process.exit();
 }
