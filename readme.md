@@ -9,6 +9,12 @@
 npm run seed
 ```
 
+## Initialize app
+
+```
+npm install
+```
+
 ## Start app
 
 ```

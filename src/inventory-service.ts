@@ -177,11 +177,19 @@ class InventoryServiceCls {
                 return product.sku?.toString() || ""
             });
 
-            const products = <IProduct[]>await repository.fetch(...idArr);
+            let productsArr: IProduct[] = [];
 
-            if (products && products.length) {
+            if (idArr.length == 1) {
+                const product = <IProduct>await repository.fetch(...idArr);
+                productsArr = [product];
+            }
+            else {
+                productsArr = <IProduct[]>await repository.fetch(...idArr);
+            }
 
-                retItems = products.map((product) => {
+            if (productsArr && productsArr.length) {
+
+                retItems = productsArr.map((product) => {
                     return {
                         sku: product.sku,
                         name: product.name,
@@ -212,20 +220,27 @@ class InventoryServiceCls {
 
         if (_productsFilter && _productsFilter.length) {
             //validation only
+            const promArr: Promise<boolean>[] = [];
             for (let p of _productsFilter) {
                 if (p.sku) {
-                    await InventoryServiceCls.validateQuantityOnDecrementSKU(p.sku, p.quantity);
+                    const promObj = InventoryServiceCls.validateQuantityOnDecrementSKU(p.sku, p.quantity);
+                    promArr.push(promObj)
                 }
             }
+            await Promise.all(promArr);
 
             //decrement only
+            const promArr2: Promise<IProduct>[] = [];
             for (let p of _productsFilter) {
                 if (p.sku && p.quantity) {
                     const isDecrement = true;
                     const isReturnProduct = false;
-                    await InventoryServiceCls.incrementSKU(p.sku, p.quantity, isDecrement, isReturnProduct);
+                    const promObj2 = InventoryServiceCls.incrementSKU(p.sku, p.quantity, isDecrement, isReturnProduct);
+                    promArr2.push(promObj2)
                 }
             }
+            await Promise.all(promArr2);
+
 
             //retrieve updated products
             retItems = await InventoryServiceCls.retrieveManySKUs(_productsFilter);
