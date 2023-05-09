@@ -6,9 +6,13 @@ import {
 import { getRedisOmClient } from "./utils/redis-wrapper";
 import * as ProductRepo from "./models/product-repo";
 
+interface IProductBodyFilter {
+    sku?: number;
+    quantity?: number;
+}
+
 class InventoryServiceCls {
 
-    //TODO : update stream
 
     static async retrieveSKU(_productId: number): Promise<IProduct> {
         /**  
@@ -79,7 +83,7 @@ class InventoryServiceCls {
         return retItem;
     }
 
-    static async incrementSKU(_productId: number, _incrQuantity?: number): Promise<IProduct> {
+    static async incrementSKU(_productId: number, _incrQuantity: number, _isDecrement: boolean, _isReturnProduct: boolean): Promise<IProduct> {
         /**  
         increment quantity of a Product.
 
@@ -94,13 +98,18 @@ class InventoryServiceCls {
         if (!_incrQuantity) {
             _incrQuantity = 1;
         }
-
+        if (_isDecrement) {
+            _incrQuantity = _incrQuantity * -1;
+        }
         if (redisOmClient && _productId && _incrQuantity) {
 
             const updateKey = `${ProductRepo.PRODUCT_KEY_PREFIX}:${_productId}`;
             await redisOmClient.redis?.json.numIncrBy(updateKey, '$.totalQuantity', _incrQuantity);
 
-            retItem = await InventoryServiceCls.retrieveSKU(_productId);
+            if (_isReturnProduct) {
+                retItem = await InventoryServiceCls.retrieveSKU(_productId);
+            }
+
         }
         else {
             throw `Input params failed !`;
@@ -109,7 +118,29 @@ class InventoryServiceCls {
         return retItem;
     }
 
-    static async decrementSKU(_productId: number, _decrQuantity?: number): Promise<IProduct> {
+
+    static async validateQuantityOnDecrementSKU(_productId: number, _decrQuantity?: number): Promise<boolean> {
+        let isValid = false;
+
+        if (!_decrQuantity) {
+            _decrQuantity = 1;
+        }
+
+        if (_productId) {
+            const product = await InventoryServiceCls.retrieveSKU(_productId);
+            if (product && product.totalQuantity && product.totalQuantity > 0
+                && (product.totalQuantity - _decrQuantity >= 0)) {
+
+                isValid = true;
+            }
+            else {
+                throw `For product with Id ${_productId} - available quantity(${product.totalQuantity}) is lesser than decrement quantity(${_decrQuantity})`;
+            }
+
+        }
+        return isValid;
+    }
+    static async decrementSKU(_productId: number, _decrQuantity: number): Promise<IProduct> {
         /**  
         decrement quantity of a Product.
 
@@ -119,28 +150,18 @@ class InventoryServiceCls {
         */
         let retItem: IProduct = {};
 
-        if (!_decrQuantity) {
-            _decrQuantity = -1;
-        }
-        else {
-            _decrQuantity = _decrQuantity * -1;
-        }
+        let isValid = await InventoryServiceCls.validateQuantityOnDecrementSKU(_productId, _decrQuantity);
 
-        const product = await InventoryServiceCls.retrieveSKU(_productId);
-
-        if (product && product.totalQuantity && product.totalQuantity > 0
-            && (product.totalQuantity + _decrQuantity >= 0)) {
-
-            retItem = await InventoryServiceCls.incrementSKU(_productId, _decrQuantity);
-        }
-        else {
-            throw `Product with Id ${_productId} - available quantity(${product.totalQuantity}) is lesser than decrement quantity(${_decrQuantity})`;
+        if (isValid) {
+            const isDecrement = true;
+            const isReturnProduct = true;
+            retItem = await InventoryServiceCls.incrementSKU(_productId, _decrQuantity, isDecrement, isReturnProduct);
         }
 
         return retItem;
     }
 
-    static async retrieveManySKUs(_productWithIds: IProduct[]): Promise<IProduct[]> {
+    static async retrieveManySKUs(_productWithIds: IProductBodyFilter[]): Promise<IProduct[]> {
         /**  
         Get current Quantity of specific Products.
 
@@ -180,8 +201,48 @@ class InventoryServiceCls {
         return retItems;
     }
 
+    static async decrementManySKUs(_productsFilter: IProductBodyFilter[]): Promise<IProduct[]> {
+        /**  
+        decrement quantity  of specific Products.
+
+        :param _productWithIds: Product list with Id
+        :return: Product list
+        */
+        let retItems: IProduct[] = [];
+
+        if (_productsFilter && _productsFilter.length) {
+            //validation only
+            for (let p of _productsFilter) {
+                if (p.sku) {
+                    await InventoryServiceCls.validateQuantityOnDecrementSKU(p.sku, p.quantity);
+                }
+            }
+
+            //decrement only
+            for (let p of _productsFilter) {
+                if (p.sku && p.quantity) {
+                    const isDecrement = true;
+                    const isReturnProduct = false;
+                    await InventoryServiceCls.incrementSKU(p.sku, p.quantity, isDecrement, isReturnProduct);
+                }
+            }
+
+            //retrieve updated products
+            retItems = await InventoryServiceCls.retrieveManySKUs(_productsFilter);
+        }
+        else {
+            throw `Input params failed !`;
+        }
+
+        return retItems;
+    }
+
 }
 
 export {
     InventoryServiceCls
+}
+
+export type {
+    IProductBodyFilter
 }
