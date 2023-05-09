@@ -4,7 +4,9 @@ import {
 
 import { getRedisOmClient } from "../utils/redis-wrapper";
 
-const schema = new RedisSchema('Product', {
+const PRODUCT_KEY_PREFIX = 'Product';
+
+const schema = new RedisSchema(PRODUCT_KEY_PREFIX, {
     sku: { type: "number" },
     name: { type: "string" },
     type: { type: "string" },
@@ -30,5 +32,6 @@ const createIndex = async () => {
 
 export {
     getRepository,
-    createIndex
+    createIndex,
+    PRODUCT_KEY_PREFIX
 };

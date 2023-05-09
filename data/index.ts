@@ -17,7 +17,6 @@ const REDIS_URI = process.env.REDIS_CONNECTION_URI || 'redis://localhost:6379';
 const pagesArr = ['page1.json'];
 
 const defaultStockQuantity = 10;
-const keyPrefix = 'ProductEntity';
 //--- config ends
 
 
@@ -52,7 +51,7 @@ const addProductsToRedis = async (_products: IProduct[]) => {
 
     if (repository && _products?.length) {
 
-        const existingKeys = await nodeRedisClient?.keys(`${keyPrefix}:*`);
+        const existingKeys = await nodeRedisClient?.keys(`${ProductRepo.PRODUCT_KEY_PREFIX}:*`);
         if (existingKeys?.length) {
             console.log(`deleting existing products and index`);
             await nodeRedisClient?.del(existingKeys);

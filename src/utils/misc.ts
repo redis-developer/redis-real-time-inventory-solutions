@@ -15,6 +15,7 @@ const HTTP_STATUS_CODES = {
 const USERS = {
     DEFAULT: 'ADMIN',
 };
+
 const getPureError = (err: unknown) => {
     return JSON.parse(JSON.stringify(err, Object.getOwnPropertyNames(err)));
 }
