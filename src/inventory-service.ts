@@ -134,10 +134,50 @@ class InventoryServiceCls {
             retItem = await InventoryServiceCls.incrementSKU(_productId, _decrQuantity);
         }
         else {
-            throw `Product with Id ${_productId} - available quantity is lesser than decrement value`;
+            throw `Product with Id ${_productId} - available quantity(${product.totalQuantity}) is lesser than decrement quantity(${_decrQuantity})`;
         }
 
         return retItem;
+    }
+
+    static async retrieveManySKUs(_productWithIds: IProduct[]): Promise<IProduct[]> {
+        /**  
+        Get current Quantity of specific Products.
+
+        :param _productWithIds: Product list with Id
+        :return: Product list
+        */
+        const repository = ProductRepo.getRepository();
+        let retItems: IProduct[] = [];
+
+        if (repository && _productWithIds && _productWithIds.length) {
+
+            const idArr = _productWithIds.map((product) => {
+                return product.sku?.toString() || ""
+            });
+
+            const products = <IProduct[]>await repository.fetch(...idArr);
+
+            if (products && products.length) {
+
+                retItems = products.map((product) => {
+                    return {
+                        sku: product.sku,
+                        name: product.name,
+                        type: product.type,
+                        totalQuantity: product.totalQuantity
+                    }
+                });
+            }
+            else {
+                throw `No products found !`;
+            }
+        }
+        else {
+            throw `Input params failed !`;
+        }
+
+        return retItems;
     }
 
 }

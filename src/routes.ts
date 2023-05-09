@@ -7,7 +7,7 @@ import { InventoryServiceCls } from './inventory-service';
 const router = express.Router();
 
 router.get('/retrieveSKU', async (req: Request, res: Response) => {
-  const id = req.query.id ? Number(req.query.id) : 0;
+  const id = req.query.sku ? Number(req.query.sku) : 0;
   const result: IApiResponseBody = {
     data: null,
     error: null,
@@ -28,7 +28,7 @@ router.get('/retrieveSKU', async (req: Request, res: Response) => {
 router.post('/updateSKU', async (req: Request, res: Response) => {
   const body = req.body;
 
-  const id = body.id ? body.id : 0;
+  const id = body.sku ? body.sku : 0;
   const quantity = body.quantity ? body.quantity : 0;
   const result: IApiResponseBody = {
     data: null,
@@ -50,7 +50,7 @@ router.post('/updateSKU', async (req: Request, res: Response) => {
 router.post('/incrementSKU', async (req: Request, res: Response) => {
   const body = req.body;
 
-  const id = body.id ? body.id : 0;
+  const id = body.sku ? body.sku : 0;
   const quantity = body.quantity ? body.quantity : 0;
   const result: IApiResponseBody = {
     data: null,
@@ -72,7 +72,7 @@ router.post('/incrementSKU', async (req: Request, res: Response) => {
 router.post('/decrementSKU', async (req: Request, res: Response) => {
   const body = req.body;
 
-  const id = body.id ? body.id : 0;
+  const id = body.sku ? body.sku : 0;
   const quantity = body.quantity ? body.quantity : 0;
   const result: IApiResponseBody = {
     data: null,
@@ -86,6 +86,27 @@ router.post('/decrementSKU', async (req: Request, res: Response) => {
     result.error = pureErr;
     res.status(HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR);
     console.error(`decrementSKU API failed !`, pureErr);
+  }
+
+  res.send(result);
+});
+
+router.post('/retrieveManySKUs', async (req: Request, res: Response) => {
+  const body = req.body;
+
+  const productWithIds = body && body.length ? body : [];
+  const result: IApiResponseBody = {
+    data: null,
+    error: null,
+  };
+
+  try {
+    result.data = await InventoryServiceCls.retrieveManySKUs(productWithIds);
+  } catch (err) {
+    const pureErr = getPureError(err);
+    result.error = pureErr;
+    res.status(HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR);
+    console.error(`retrieveManySKUs API failed !`, pureErr);
   }
 
   res.send(result);
