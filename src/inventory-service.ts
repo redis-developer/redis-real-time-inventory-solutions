@@ -134,7 +134,7 @@ class InventoryServiceCls {
                 isValid = true;
             }
             else {
-                throw `For product with Id ${_productId} - available quantity(${product.totalQuantity}) is lesser than decrement quantity(${_decrQuantity})`;
+                throw `For product with Id ${_productId},  available quantity(${product.totalQuantity}) is lesser than decrement quantity(${_decrQuantity})`;
             }
 
         }
@@ -177,14 +177,15 @@ class InventoryServiceCls {
                 return product.sku?.toString() || ""
             });
 
+            const result = await repository.fetch(...idArr);
+
             let productsArr: IProduct[] = [];
 
             if (idArr.length == 1) {
-                const product = <IProduct>await repository.fetch(...idArr);
-                productsArr = [product];
+                productsArr = [<IProduct>result];
             }
             else {
-                productsArr = <IProduct[]>await repository.fetch(...idArr);
+                productsArr = <IProduct[]>result;
             }
 
             if (productsArr && productsArr.length) {

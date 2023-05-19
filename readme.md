@@ -1,18 +1,18 @@
 ## Tech stack
 
-- NodeJS
+- NodeJS + Express
 - Redis
-
-## Seed database
-
-```sh
-npm run seed
-```
 
 ## Initialize app
 
 ```
 npm install
+```
+
+## Seed database
+
+```sh
+npm run seed
 ```
 
 ## Start app
@@ -23,191 +23,14 @@ npm start
 
 ## API Docs
 
-### retrieveSKU
+- [retrieve-sku](./docs/01-retrieve-sku-api.md)
 
-**Request**
+- [update-sku](./docs/02-update-sku-api.md)
 
-```json
-GET http://localhost:3000/api/retrieveSKU?sku=1019688
-```
+- [increment-sku](./docs/03-increment-sku-api.md)
 
-**Response**
+- [decrement-sku](./docs/04-decrement-sku-api.md)
 
-```json
-{
-  "data": {
-    "sku": 1019688,
-    "name": "5-Year Protection Plan - Geek Squad",
-    "type": "BlackTie",
-    "totalQuantity": 10
-  },
-  "error": null
-}
-```
+- [retrieve-many-skus](./docs/05-retrieve-many-skus-api.md)
 
-### updateSKU
-
-**Request**
-
-```json
-POST http://localhost:3000/api/updateSKU
-{
-    "sku":1019688,
-    "quantity":25
-}
-```
-
-**Response**
-
-```json
-{
-  "data": {
-    "sku": 1019688,
-    "name": "5-Year Protection Plan - Geek Squad",
-    "type": "BlackTie",
-    "totalQuantity": 25
-  },
-  "error": null
-}
-```
-
-### incrementSKU
-
-**Request**
-
-```json
-POST http://localhost:3000/api/incrementSKU
-{
-    "sku":1019688,
-    "quantity":2
-}
-```
-
-**Response**
-
-```json
-{
-  "data": {
-    "sku": 1019688,
-    "name": "5-Year Protection Plan - Geek Squad",
-    "type": "BlackTie",
-    "totalQuantity": 12
-  },
-  "error": null
-}
-```
-
-### decrementSKU
-
-**Request**
-
-```json
-POST http://localhost:3000/api/decrementSKU
-{
-    "sku":1019688,
-    "quantity":4
-}
-```
-
-**Response**
-
-```json
-{
-  "data": {
-    "sku": 1019688,
-    "name": "5-Year Protection Plan - Geek Squad",
-    "type": "BlackTie",
-    "totalQuantity": 16
-  },
-  "error": null
-}
-```
-
-### retrieveManySKUs
-
-**Request**
-
-```json
-POST http://localhost:3000/api/retrieveManySKUs
-[{
-    "sku":1019688
-},{
-    "sku":1003622
-},{
-    "sku":1006702
-}]
-```
-
-**Response**
-
-```json
-{
-  "data": [
-    {
-      "sku": 1019688,
-      "name": "5-Year Protection Plan - Geek Squad",
-      "type": "BlackTie",
-      "totalQuantity": 24
-    },
-    {
-      "sku": 1003622,
-      "name": "Aquarius - Fender Stratocaster 1,000-Piece Jigsaw Puzzle - Black/Red/White/Yellow/Green/Orange/Blue",
-      "type": "HardGood",
-      "totalQuantity": 10
-    },
-    {
-      "sku": 1006702,
-      "name": "Clash of the Titans [DVD] [2010]",
-      "type": "Movie",
-      "totalQuantity": 10
-    }
-  ],
-  "error": null
-}
-```
-
-### decrementManySKUs
-
-**Request**
-
-```json
-POST http://localhost:3000/api/decrementManySKUs
-[{
-    "sku":1019688,
-    "quantity":4
-},{
-    "sku":1003622,
-     "quantity":2
-},{
-    "sku":1006702,
-    "quantity":2
-}]
-```
-
-**Response**
-
-```json
-{
-  "data": [
-    {
-      "sku": 1019688,
-      "name": "5-Year Protection Plan - Geek Squad",
-      "type": "BlackTie",
-      "totalQuantity": 28
-    },
-    {
-      "sku": 1003622,
-      "name": "Aquarius - Fender Stratocaster 1,000-Piece Jigsaw Puzzle - Black/Red/White/Yellow/Green/Orange/Blue",
-      "type": "HardGood",
-      "totalQuantity": 8
-    },
-    {
-      "sku": 1006702,
-      "name": "Clash of the Titans [DVD] [2010]",
-      "type": "Movie",
-      "totalQuantity": 8
-    }
-  ],
-  "error": null
-}
-```
+- [decrement-many-skus](./docs/06-decrement-many-skus-api.md)
