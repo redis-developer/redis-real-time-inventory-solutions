@@ -1,5 +1,5 @@
 import type { IApiResponseBody } from './utils/misc';
-import type { IProductBodyFilter } from './inventory-service';
+import type { IProductBodyFilter, IInventoryBodyFilter } from './inventory-service';
 
 import express, { Request, Response } from 'express';
 import { getPureError, HTTP_STATUS_CODES } from './utils/misc';
@@ -131,6 +131,48 @@ router.post('/decrementManySKUs', async (req: Request, res: Response) => {
     result.error = pureErr;
     res.status(HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR);
     console.error(`decrementManySKUs API failed !`, pureErr);
+  }
+
+  res.send(result);
+});
+
+
+//------
+router.post('/inventorySearch', async (req: Request, res: Response) => {
+  const inventoryFilter: IInventoryBodyFilter = req.body;
+
+  const result: IApiResponseBody = {
+    data: null,
+    error: null,
+  };
+
+  try {
+    result.data = await InventoryServiceCls.inventorySearch(inventoryFilter);
+  } catch (err) {
+    const pureErr = getPureError(err);
+    result.error = pureErr;
+    res.status(HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR);
+    console.error(`inventorySearch API failed !`, pureErr);
+  }
+
+  res.send(result);
+});
+
+router.post('/inventorySearchWithDistance', async (req: Request, res: Response) => {
+  const inventoryFilter: IInventoryBodyFilter = req.body;
+
+  const result: IApiResponseBody = {
+    data: null,
+    error: null,
+  };
+
+  try {
+    result.data = await InventoryServiceCls.inventorySearchWithDistance(inventoryFilter);
+  } catch (err) {
+    const pureErr = getPureError(err);
+    result.error = pureErr;
+    res.status(HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR);
+    console.error(`inventorySearchWithDistance API failed !`, pureErr);
   }
 
   res.send(result);

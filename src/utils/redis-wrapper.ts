@@ -1,4 +1,4 @@
-import { createClient, commandOptions } from 'redis';
+import { createClient, commandOptions, AggregateSteps } from 'redis';
 import {
   Client as RedisOmClient,
   Entity as RedisEntity,
@@ -73,6 +73,7 @@ export {
   getRedisOmClient,
   RedisEntity,
   RedisSchema,
+  AggregateSteps
 };
 
 export type { RedisWrapperCls, NodeRedisClientType };

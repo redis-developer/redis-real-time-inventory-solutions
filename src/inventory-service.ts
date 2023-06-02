@@ -1,14 +1,25 @@
 import type { IProduct } from './models/product-mdl';
+import type { IStoresInventory } from './models/stores-inventory-mdl';
+
 import {
     Entity as RedisEntity
 } from "redis-om";
 
-import { getRedisOmClient } from "./utils/redis-wrapper";
+import { getRedisOmClient, getNodeRedisClient, AggregateSteps } from "./utils/redis-wrapper";
 import * as ProductRepo from "./models/product-repo";
+import * as StoresInventoryRepo from "./models/stores-inventory-repo";
 
 interface IProductBodyFilter {
     sku?: number;
     quantity?: number;
+}
+interface IInventoryBodyFilter {
+    sku?: number;
+    searchRadiusInKm?: number;
+    userLocation?: {
+        latitude?: number;
+        longitude?: number;
+    }
 }
 
 class InventoryServiceCls {
@@ -253,6 +264,140 @@ class InventoryServiceCls {
         return retItems;
     }
 
+    static async inventorySearch(_inventoryFilter: IInventoryBodyFilter): Promise<IStoresInventory[]> {
+        /**  
+       Search Product in available stores within search radius.
+
+       :param _inventoryFilter: Product Id, searchRadius and current userLocation 
+       :return: Inventory product list 
+       */
+        const nodeRedisClient = getNodeRedisClient();
+
+        const repository = StoresInventoryRepo.getRepository();
+        let retItems: IStoresInventory[] = [];
+
+        if (nodeRedisClient && repository && _inventoryFilter?.sku
+            && _inventoryFilter.userLocation?.latitude
+            && _inventoryFilter.userLocation?.longitude) {
+
+            const lat = _inventoryFilter.userLocation?.latitude;
+            const long = _inventoryFilter.userLocation?.longitude;
+            const radiusInKm = _inventoryFilter.searchRadiusInKm || 1000;
+
+            const queryBuilder = repository.search()
+                .where('sku')
+                .eq(_inventoryFilter.sku)
+                .and('quantity')
+                .gt(0)
+                .and('storeLocation')
+                .inRadius((circle) => {
+                    return circle
+                        .latitude(lat)
+                        .longitude(long)
+                        .radius(radiusInKm)
+                        .kilometers
+                });
+
+            console.log(queryBuilder.query);
+            // ( ( (@sku:[1019688 1019688]) (@quantity:[(0 +inf]) ) (@storeLocation:[-78.878738 42.88023 500 km]) )
+
+            retItems = <IStoresInventory[]>await queryBuilder.return.all();
+
+            /* RAW QUERY SAMPLE
+             FT.SEARCH StoresInventory:index '( ( (@sku:[1019688 1019688]) (@quantity:[(0 +inf]) ) (@storeLocation:[-78.878738 42.88023 500 km]) )' 
+            */
+
+
+            if (!retItems.length) {
+                throw `Product not found with in ${radiusInKm}km range!`;
+            }
+        }
+        else {
+            throw `Input params failed !`;
+        }
+        return retItems;
+    }
+
+    static async inventorySearchWithDistance(_inventoryFilter: IInventoryBodyFilter): Promise<IStoresInventory[]> {
+        /**  
+       Search Product in available stores within search radius, Also sort by (store) distance relative to current user location.
+
+       :param _inventoryFilter: Product Id, searchRadius and current userLocation 
+       :return: Inventory product list 
+       */
+        const nodeRedisClient = getNodeRedisClient();
+
+        const repository = StoresInventoryRepo.getRepository();
+        let retItems: IStoresInventory[] = [];
+
+        if (nodeRedisClient && repository && _inventoryFilter?.sku
+            && _inventoryFilter.userLocation?.latitude
+            && _inventoryFilter.userLocation?.longitude) {
+
+            const lat = _inventoryFilter.userLocation?.latitude;
+            const long = _inventoryFilter.userLocation?.longitude;
+            const radiusInKm = _inventoryFilter.searchRadiusInKm || 1000;
+
+            const queryBuilder = repository.search()
+                .where('sku')
+                .eq(_inventoryFilter.sku)
+                .and('quantity')
+                .gt(0)
+                .and('storeLocation')
+                .inRadius((circle) => {
+                    return circle
+                        .latitude(lat)
+                        .longitude(long)
+                        .radius(radiusInKm)
+                        .kilometers
+                });
+
+            console.log(queryBuilder.query);
+            // ( ( (@sku:[1019688 1019688]) (@quantity:[(0 +inf]) ) (@storeLocation:[-78.878738 42.88023 500 km]) )
+
+            const indexName = `${StoresInventoryRepo.STORES_INVENTORY_KEY_PREFIX}:index`;
+            const aggregator = await nodeRedisClient.ft.aggregate(
+                indexName,
+                queryBuilder.query,
+                {
+                    LOAD: ["@storeId", "@storeLocation", "@sku", "@quantity"],
+                    STEPS: [{
+                        type: AggregateSteps.APPLY,
+                        expression: `geodistance(@storeLocation, ${long}, ${lat})/1000`,
+                        AS: 'distInKm'
+                    }, {
+                        type: AggregateSteps.SORTBY,
+                        BY: "@distInKm"
+                    }]
+                });
+
+            /* RAW QUERY SAMPLE
+            FT.AGGREGATE StoresInventory:index '( ( (@sku:[1019688 1019688]) (@quantity:[(0 +inf]) ) (@storeLocation:[-78.878738 42.88023 500 km]) )' LOAD 4 @storeId @storeLocation @sku @quantity  APPLY "geodistance(@storeLocation,-78.878738,42.88043)/1000" AS distInKm SORTBY 2 @distInKm ASC
+           */
+            retItems = <IStoresInventory[]>aggregator.results;
+
+            if (!retItems.length) {
+                throw `Product not found with in ${radiusInKm}km range!`;
+            }
+            else {
+                retItems = retItems.map((item) => {
+                    if (typeof item.storeLocation == "string") {
+                        const location = item.storeLocation.split(",");
+                        item.storeLocation = {
+                            longitude: Number(location[0]),
+                            latitude: Number(location[1]),
+                        }
+                    }
+                    return item;
+                })
+            }
+        }
+        else {
+            throw `Input params failed !`;
+        }
+        return retItems;
+    }
+
 }
 
 export {
@@ -260,5 +405,6 @@ export {
 }
 
 export type {
-    IProductBodyFilter
+    IProductBodyFilter,
+    IInventoryBodyFilter
 }

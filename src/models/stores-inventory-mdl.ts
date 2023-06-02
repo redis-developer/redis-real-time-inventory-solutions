@@ -3,7 +3,7 @@ interface IStore {
     storeLocation?: {
         latitude?: number;
         longitude?: number;
-    },
+    } | string,
 }
 
 interface IStoresInventory extends IStore {
