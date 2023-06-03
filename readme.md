@@ -23,6 +23,8 @@ npm start
 
 ## API Docs
 
+### Stock Management
+
 - [retrieve-sku](./docs/01-retrieve-sku-api.md)
 
 - [update-sku](./docs/02-update-sku-api.md)
@@ -34,3 +36,9 @@ npm start
 - [retrieve-many-skus](./docs/05-retrieve-many-skus-api.md)
 
 - [decrement-many-skus](./docs/06-decrement-many-skus-api.md)
+
+### Inventory search by Geo location
+
+- [inventory-search](./docs/07-inventory-search-api.md)
+
+- [inventory-search-with-distance](./docs/08-inventory-search-with-distance-api.md)

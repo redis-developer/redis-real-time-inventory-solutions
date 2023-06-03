@@ -103,7 +103,7 @@ const deleteExistingKeys = async (_keyPrefix: string) => {
     if (_keyPrefix) {
         const existingKeys = await nodeRedisClient?.keys(`${_keyPrefix}:*`);
         if (existingKeys?.length) {
-            console.log(`deleting existing ${_keyPrefix} and index`);
+            console.log(`deleting existing keys/ index starting with ${_keyPrefix}`);
             await nodeRedisClient?.del(existingKeys);
         }
     }
@@ -139,7 +139,7 @@ const addProductsToStoresInventory = async (_products: IProduct[]) => {
 
         await deleteExistingKeys(StoresInventoryRepo.STORES_INVENTORY_KEY_PREFIX);
 
-        console.log(`adding products to Stores Inventory...`);
+        console.log(`Started adding products to Stores Inventory...`);
 
         for (let prod of _products) {
             let count = 0;
@@ -148,7 +148,7 @@ const addProductsToStoresInventory = async (_products: IProduct[]) => {
                 count++;
             }
         }
-        console.log(`Products added to Stores Inventory!`);
+        console.log(`Completed adding products to Stores Inventory !`);
 
     }
 

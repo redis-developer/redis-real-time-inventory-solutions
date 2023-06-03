@@ -137,7 +137,7 @@ router.post('/decrementManySKUs', async (req: Request, res: Response) => {
 });
 
 
-//------
+//#region inventorySearch APIs
 router.post('/inventorySearch', async (req: Request, res: Response) => {
   const inventoryFilter: IInventoryBodyFilter = req.body;
 
@@ -177,5 +177,7 @@ router.post('/inventorySearchWithDistance', async (req: Request, res: Response) 
 
   res.send(result);
 });
+
+//#endregion
 
 export { router };

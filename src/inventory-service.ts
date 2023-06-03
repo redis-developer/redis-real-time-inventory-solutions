@@ -264,11 +264,13 @@ class InventoryServiceCls {
         return retItems;
     }
 
+    //#region inventorySearch APIs
+
     static async inventorySearch(_inventoryFilter: IInventoryBodyFilter): Promise<IStoresInventory[]> {
         /**  
-       Search Product in available stores within search radius.
+       Search Product in stores within search radius.
 
-       :param _inventoryFilter: Product Id, searchRadius and current userLocation 
+       :param _inventoryFilter: Product Id (sku), searchRadiusInKm and current userLocation 
        :return: Inventory product list 
        */
         const nodeRedisClient = getNodeRedisClient();
@@ -277,11 +279,11 @@ class InventoryServiceCls {
         let retItems: IStoresInventory[] = [];
 
         if (nodeRedisClient && repository && _inventoryFilter?.sku
-            && _inventoryFilter.userLocation?.latitude
-            && _inventoryFilter.userLocation?.longitude) {
+            && _inventoryFilter?.userLocation?.latitude
+            && _inventoryFilter?.userLocation?.longitude) {
 
-            const lat = _inventoryFilter.userLocation?.latitude;
-            const long = _inventoryFilter.userLocation?.longitude;
+            const lat = _inventoryFilter.userLocation.latitude;
+            const long = _inventoryFilter.userLocation.longitude;
             const radiusInKm = _inventoryFilter.searchRadiusInKm || 1000;
 
             const queryBuilder = repository.search()
@@ -299,11 +301,13 @@ class InventoryServiceCls {
                 });
 
             console.log(queryBuilder.query);
-            // ( ( (@sku:[1019688 1019688]) (@quantity:[(0 +inf]) ) (@storeLocation:[-78.878738 42.88023 500 km]) )
+            /* Sample queryBuilder query 
+              ( ( (@sku:[1019688 1019688]) (@quantity:[(0 +inf]) ) (@storeLocation:[-78.878738 42.88023 500 km]) )
+            */
 
             retItems = <IStoresInventory[]>await queryBuilder.return.all();
 
-            /* RAW QUERY SAMPLE
+            /* Sample command to run query directly on CLI
              FT.SEARCH StoresInventory:index '( ( (@sku:[1019688 1019688]) (@quantity:[(0 +inf]) ) (@storeLocation:[-78.878738 42.88023 500 km]) )' 
             */
 
@@ -320,9 +324,9 @@ class InventoryServiceCls {
 
     static async inventorySearchWithDistance(_inventoryFilter: IInventoryBodyFilter): Promise<IStoresInventory[]> {
         /**  
-       Search Product in available stores within search radius, Also sort by (store) distance relative to current user location.
+       Search Product in stores within search radius, Also sort results by distance from current user location to store.
 
-       :param _inventoryFilter: Product Id, searchRadius and current userLocation 
+       :param _inventoryFilter: Product Id (sku), searchRadiusInKm and current userLocation 
        :return: Inventory product list 
        */
         const nodeRedisClient = getNodeRedisClient();
@@ -331,11 +335,11 @@ class InventoryServiceCls {
         let retItems: IStoresInventory[] = [];
 
         if (nodeRedisClient && repository && _inventoryFilter?.sku
-            && _inventoryFilter.userLocation?.latitude
-            && _inventoryFilter.userLocation?.longitude) {
+            && _inventoryFilter?.userLocation?.latitude
+            && _inventoryFilter?.userLocation?.longitude) {
 
-            const lat = _inventoryFilter.userLocation?.latitude;
-            const long = _inventoryFilter.userLocation?.longitude;
+            const lat = _inventoryFilter.userLocation.latitude;
+            const long = _inventoryFilter.userLocation.longitude;
             const radiusInKm = _inventoryFilter.searchRadiusInKm || 1000;
 
             const queryBuilder = repository.search()
@@ -353,7 +357,9 @@ class InventoryServiceCls {
                 });
 
             console.log(queryBuilder.query);
-            // ( ( (@sku:[1019688 1019688]) (@quantity:[(0 +inf]) ) (@storeLocation:[-78.878738 42.88023 500 km]) )
+            /* Sample queryBuilder query 
+                ( ( (@sku:[1019688 1019688]) (@quantity:[(0 +inf]) ) (@storeLocation:[-78.878738 42.88023 500 km]) )
+            */
 
             const indexName = `${StoresInventoryRepo.STORES_INVENTORY_KEY_PREFIX}:index`;
             const aggregator = await nodeRedisClient.ft.aggregate(
@@ -371,9 +377,10 @@ class InventoryServiceCls {
                     }]
                 });
 
-            /* RAW QUERY SAMPLE
-            FT.AGGREGATE StoresInventory:index '( ( (@sku:[1019688 1019688]) (@quantity:[(0 +inf]) ) (@storeLocation:[-78.878738 42.88023 500 km]) )' LOAD 4 @storeId @storeLocation @sku @quantity  APPLY "geodistance(@storeLocation,-78.878738,42.88043)/1000" AS distInKm SORTBY 2 @distInKm ASC
-           */
+            /* Sample command to run query directly on CLI
+                FT.AGGREGATE StoresInventory:index '( ( (@sku:[1019688 1019688]) (@quantity:[(0 +inf]) ) (@storeLocation:[-78.878738 42.88023 500 km]) )' LOAD 4 @storeId @storeLocation @sku @quantity  APPLY "geodistance(@storeLocation,-78.878738,42.88043)/1000" AS distInKm SORTBY 1 @distInKm 
+            */
+
             retItems = <IStoresInventory[]>aggregator.results;
 
             if (!retItems.length) {
@@ -397,6 +404,8 @@ class InventoryServiceCls {
         }
         return retItems;
     }
+    //#endregion
+
 
 }
 
